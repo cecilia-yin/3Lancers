@@ -31,6 +31,8 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ErrorIcon from '@material-ui/icons/Error';
 import styles from './DashboardTodo.module.css';
 
+const axios = require('axios');
+
 const useStyles = makeStyles((theme) => ({
   root: {
     borderRadius: '10px',
@@ -63,41 +65,15 @@ const outdated = {
 };
 
 const DashboardTodo = () => {
-  const listitems = [
-    {
-      name: 'isOverdue',
-      due: '2021-04-30',
-      isOverdue: true,
-      completed: false,
-    },
-    {
-      name: 'OutDated',
-      due: '2021-01-30',
-      isOverdue: false,
-      completed: true,
-    },
-    {
-      name: '一二三四五',
-      due: '2021-04-30',
-      isOverdue: true,
-      completed: true,
-    },
-    {
-      name: '上山打老虎',
-      due: '2021-04-30',
-      isOverdue: true,
-      completed: false,
-    },
-  ];
-
+  
   const classes = useStyles();
   const [todoName, setTodoName] = useState('');
-  const [todoDueDate, setTodoDueDate] = useState('2021-01-01');
-  const [newItem, setNewItem] = useState(listitems);
+  const [todoDueDate, setTodoDueDate] = useState(undefined);
+  const [todos, setTodos] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [cancel, setCancel] = useState([0]);
   const [reDate, setReDate] = useState('');
-  const [selectedTodo, setselectedTodo] = useState('');
+  const [selectedTodo, setSelectedTodo] = useState({});
   const [open, setOpen] = useState(false);
   const [migrate, setMigrate] = useState(false);
 
@@ -111,16 +87,16 @@ const DashboardTodo = () => {
 
   // Sort event in order of time
   const sortEvent = () => {
-    const sorted = newItem.sort((a, b) => {
+    const sorted = todos.sort((a, b) => {
       return dateToTimestamp(a.due) - dateToTimestamp(b.due);
     });
-    setNewItem(sorted);
+    setTodos(sorted);
   };
 
   // Change date for reschedule
   const reDateChange = (event) => {
     setReDate(event.target.value);
-    setselectedTodo({
+    setSelectedTodo({
       name: selectedTodo.name,
       due: event.target.value,
       isOverdue: false,
@@ -130,15 +106,19 @@ const DashboardTodo = () => {
 
   // Sets the selected to do to checked/completed if the user clicks on the selected item
   // Will add the completed item to the completed array
-  const handleToggle = (value) => () => {
-    const newList = [...newItem];
+  const handleToggle = (todo) => () => {
+    const { _id, completed } = todo;
+
+    axios.put(`/api/todo/${_id}`, { completed: !completed });
+
+    const newList = [...todos];
     for (const x of newList) {
-      if (x.name === value) {
+      if (x.name === todo) {
         x.completed = !x.completed;
       }
     }
 
-    setNewItem(newList);
+    setTodos(newList);
   };
 
   const openAdd = () => {
@@ -178,12 +158,12 @@ const DashboardTodo = () => {
 
   const secondEvent = () => {
     if (open) {
-      setNewItem((prev) => [...prev, todoName]);
+      setTodos((prev) => [...prev, todoName]);
     }
     // removed sorting
   };
   const handleOption = (value) => (event) => {
-    setselectedTodo({
+    setSelectedTodo({
       name: value.name,
       due: value.due,
       isOverdue: value.isOverdue,
@@ -206,7 +186,8 @@ const DashboardTodo = () => {
   };
 
   const deleteEvent = () => {
-    const newList = [...newItem];
+    axios.delete(`/api/todo/${selectedTodo._id}`);
+    const newList = [...todos];
     for (const x of newList) {
       if (x.name === selectedTodo.name) {
         const index = newList.indexOf(x);
@@ -214,12 +195,12 @@ const DashboardTodo = () => {
       }
     }
 
-    setNewItem(newList);
+    setTodos(newList);
     setAnchorEl(null);
   };
 
   const scheduleEvent = () => {
-    const newList = [...newItem];
+    const newList = [...todos];
     const selectedTodoInst = selectedTodo;
 
     for (const x of newList) {
@@ -228,7 +209,7 @@ const DashboardTodo = () => {
       }
     }
 
-    setNewItem(newList);
+    setTodos(newList);
     closeMigrate();
     setAnchorEl(null);
   };
@@ -242,7 +223,7 @@ const DashboardTodo = () => {
         </div>
         <Divider />
         <List className={classes.root}>
-          {newItem.map((todo) => {
+          {todos.map((todo) => {
             const labelId = `checkbox-list-label-${todo}`;
             return (
               // Item is binded with a name key and when it is pressed the item will become completed
