@@ -64,7 +64,7 @@ const outdated = {
   fontWeight: 'Bold',
 };
 
-const DashboardTodo = () => {
+const DashboardTodo = ({date}) => {
   
   const classes = useStyles();
   const [todoName, setTodoName] = useState('');
@@ -78,11 +78,11 @@ const DashboardTodo = () => {
   const [migrate, setMigrate] = useState(false);
 
   function dateToTimestamp(endTime) {
-    const date = new Date();
-    date.setFullYear(endTime.substring(0, 4));
-    date.setMonth(endTime.substring(5, 7) - 1);
-    date.setDate(endTime.substring(8, 10));
-    return Date.parse(date) / 1000;
+    const currentDate = new Date();
+    currentDate.setFullYear(endTime.substring(0, 4));
+    currentDate.setMonth(endTime.substring(5, 7) - 1);
+    currentDate.setDate(endTime.substring(8, 10));
+    return Date.parse(currentDate) / 1000;
   }
 
   // Sort event in order of time
@@ -156,11 +156,25 @@ const DashboardTodo = () => {
     sortEvent();
   };
 
-  const secondEvent = () => {
+  const handleAdd = () => {
+
+    const body = {
+      name: todoName,
+      createdDate: date,
+      dueDate: todoDueDate,
+    };
+
+    axios.post('/api/todo', body).then((res) => {
+      const newTodo = res.data;
+      setTodos([...todos, newTodo]);
+      setTodoName('');
+      setTodoDueDate('');
+    });
+
     if (open) {
       setTodos((prev) => [...prev, todoName]);
     }
-    // removed sorting
+
   };
   const handleOption = (value) => (event) => {
     setSelectedTodo({
@@ -393,8 +407,9 @@ const DashboardTodo = () => {
                         label="Button"
                         // Once either buttons has been pressed then the modal will close to show other components
                         onClick={() => {
+                          handleAdd();
                           handleClose();
-                          secondEvent();
+
                         }}
                       >
                         Confirm
